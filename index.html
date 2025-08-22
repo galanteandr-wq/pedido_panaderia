@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Panadería — Pedidos</title>
+<style>
+  :root{
+    --bg:#0f172a;        /* slate-900 */
+    --panel:#111827;     /* gray-900 */
+    --soft:#1f2937;      /* gray-800 */
+    --soft2:#374151;     /* gray-700 */
+    --acc:#22c55e;       /* green-500 */
+    --acc-2:#06b6d4;     /* cyan-500 */
+    --text:#e5e7eb;      /* gray-200 */
+    --muted:#94a3b8;     /* slate-400 */
+    --danger:#ef4444;    /* red-500 */
+    --warn:#f59e0b;      /* amber-500 */
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:linear-gradient(120deg,var(--bg),#020617);
+    color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,"Helvetica Neue",Arial;
+  }
+  header{
+    padding:20px 16px; display:flex; gap:16px; align-items:center; justify-content:space-between;
+    position:sticky; top:0; background:rgba(2,6,23,.7); backdrop-filter: blur(8px); border-bottom:1px solid #0b1220;
+    z-index:10;
+  }
+  header h1{ margin:0; font-size:1.25rem; letter-spacing:.3px; font-weight:700 }
+  .byline{ color:var(--muted); font-size:.9rem }
+  main{ padding:24px 16px; max-width:1100px; margin:auto }
+  .grid{
+    display:grid; gap:18px; grid-template-columns: repeat(12,1fr);
+  }
+  .card{
+    grid-column: span 4; background:linear-gradient(180deg,var(--panel),#0b1220);
+    border:1px solid #0b1220; border-radius:var(--radius); overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .card img{ width:100%; height:180px; object-fit:cover; display:block }
+  .card .body{ padding:14px }
+  .title{ font-weight:700; margin:0 0 6px 0; font-size:1.05rem }
+  .muted{ color:var(--muted); font-size:.9rem }
+  .row{ display:flex; gap:10px; align-items:center; margin:10px 0 }
+  input[type="number"], input[type="text"]{
+    background:#0b1220; color:var(--text); border:1px solid #0f1a2d; border-radius:10px; padding:8px 10px; outline:none;
+  }
+  input[type="number"]:focus, input[type="text"]:focus{ border-color: var(--acc-2) }
+  .btn{
+    border:1px solid transparent; border-radius:999px; padding:8px 14px; cursor:pointer; font-weight:600;
+    background:linear-gradient(90deg,var(--acc),#16a34a); color:#041b10; transition:.15s transform ease;
+  }
+  .btn:hover{ transform: translateY(-1px) }
+  .btn.secondary{ background:linear-gradient(90deg,#38bdf8,#06b6d4); color:#00121a }
+  .btn.ghost{ background:transparent; border-color:#1b2a45; color:var(--text) }
+  .btn.danger{ background:linear-gradient(90deg,#fb7185,#ef4444); color:#2a060a }
+  .panel{
+    grid-column: span 12; background:linear-gradient(180deg,var(--panel),#0b1220);
+    border:1px solid #0b1220; border-radius:var(--radius); padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .flex{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+  .spacer{ flex:1 }
+  table{ width:100%; border-collapse: collapse; margin-top:8px }
+  thead th{
+    text-align:left; font-size:.9rem; color:var(--muted); font-weight:600; letter-spacing:.3px;
+    border-bottom:1px solid #0f1a2d; padding:10px 8px;
+  }
+  tbody td{ padding:10px 8px; border-bottom:1px dashed #0f1a2d; vertical-align: middle }
+  .qty-btn{
+    width:28px; height:28px; border-radius:8px; border:1px solid #1b2a45; background:#0b1220; color:var(--text);
+    cursor:pointer; font-weight:700
+  }
+  tfoot td{ padding:10px 8px; font-weight:700 }
+  .pill{
+    background:#09152a; border:1px solid #0f1a2d; padding:6px 10px; border-radius:999px; font-size:.9rem; color:var(--muted)
+  }
+  .totales{
+    display:flex; gap:10px; flex-wrap:wrap; margin-top:10px
+  }
+  .totales .tag{
+    background:#0b1220; border:1px solid #0f1a2d; padding:8px 12px; border-radius:12px; color:#d1d5db; font-weight:600
+  }
+  footer{ text-align:center; color:var(--muted); padding:24px }
+  @media (max-width: 980px){
+    .card{ grid-column: span 6 }
+  }
+  @media (max-width: 640px){
+    .card{ grid-column: span 12 }
+    header{ flex-direction:column; align-items:flex-start; gap:6px }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Panadería — Pedidos</h1>
+      <div class="byline">Elegí producto, precio y cantidad. Registrá el <strong>nombre del cliente</strong>.</div>
+    </div>
+    <div class="flex">
+      <label class="pill">Cliente:&nbsp;
+        <input id="cliente" type="text" placeholder="Ej: Ana Pérez" list="clientesList" style="background:transparent;border:none;color:#e5e7eb;width:220px;">
+        <datalist id="clientesList"></datalist>
+      </label>
+      <button class="btn ghost" id="btnNuevoCliente" title="Limpiar nombre">Nuevo cliente</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid" id="cards"></section>
+
+    <section class="panel">
+      <div class="flex">
+        <strong>Carrito</strong>
+        <span class="pill" id="resumenCliente">(sin cliente)</span>
+        <div class="spacer"></div>
+        <button class="btn danger" id="btnVaciar">Vaciar carrito</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Producto</th>
+            <th>Precio (u.)</th>
+            <th>Cant.</th>
+            <th>Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:right">TOTAL:</td>
+            <td id="total" style="font-size:1.1rem"></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="totales" id="totalesPorCliente"></div>
+    </section>
+  </main>
+
+  <footer>Hecho con ♥ — funciona 100% offline (HTML + CSS + JS)</footer>
+
+<script>
+/* ============================
+   Datos de productos (editables)
+   ============================ */
+const PRODUCTOS = [
+  {
+    id: "medialunas",
+    nombre: "Medialunas",
+    precio: 450.00,                       // precio por unidad
+    imagen: "medialunas.jpg",             // poné esta imagen en la misma carpeta
+    descripcion: "Horneadas, glaseadas, súper tiernas."
+  },
+  {
+    id: "bolas",
+    nombre: "Bolas de fraile",
+    precio: 700.00,
+    imagen: "bolas_fraile.jpg",
+    descripcion: "Rellenas y espolvoreadas con azúcar."
+  },
+  {
+    id: "churros",
+    nombre: "Churros c/ chocolate",
+    precio: 900.00,
+    imagen: "churros.jpg",
+    descripcion: "Crujientes por fuera, bañados en chocolate."
+  }
+];
+
+/* ============================
+   Estado
+   ============================ */
+let carrito = []; // {id, cliente, productoId, producto, precio, cantidad, subtotal}
+let clientes = new Set();
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+
+/* ============================
+   Render de cards de producto
+   ============================ */
+function renderCards(){
+  const cont = $("#cards");
+  cont.innerHTML = "";
+  PRODUCTOS.forEach(p => {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src=''; this.parentElement.querySelector('.imgFallback').style.display='block'">
+      <div class="body">
+        <h3 class="title">${p.nombre}</h3>
+        <div class="muted">${p.descripcion || ""}</div>
+        <div class="row">
+          <label>Precio: </label>
+          <input type="number" min="0" step="0.01" value="${p.precio.toFixed(2)}" class="precioInput" data-id="${p.id}">
+          <span class="muted"> /u</span>
+        </div>
+        <div class="row">
+          <label>Cantidad: </label>
+          <input type="number" min="1" step="1" value="1" class="cantInput" data-id="${p.id}" style="width:100px">
+          <button class="btn secondary addBtn" data-id="${p.id}">Agregar</button>
+        </div>
+        <div class="imgFallback muted" style="display:none;margin-top:6px">⚠️ No se encontró la imagen (<code>${p.imagen}</code>)</div>
+      </div>
+    `;
+    cont.appendChild(card);
+  });
+
+  // Eventos de agregar
+  $$(".addBtn").forEach(btn=>{
+    btn.addEventListener("click", e=>{
+      const id = e.currentTarget.dataset.id;
+      agregarAlCarrito(id);
+    });
+  });
+}
+
+function nombreClienteActual(){
+  return $("#cliente").value.trim();
+}
+
+function asegurarClienteEnLista(nombre){
+  if(!nombre) return;
+  clientes.add(nombre);
+  const dl = $("#clientesList");
+  if(!Array.from(dl.options).some(o=>o.value===nombre)){
+    const opt = document.createElement("option");
+    opt.value = nombre;
+    dl.appendChild(opt);
+  }
+  $("#resumenCliente").textContent = nombre;
+}
+
+/* ============================
+   Carrito
+   ============================ */
+function agregarAlCarrito(productoId){
+  const cliente = nombreClienteActual();
+  if(!cliente){
+    alert("Escribí el nombre del cliente primero.");
+    $("#cliente").focus();
+    return;
+  }
+  const card = document.querySelector(`.precioInput[data-id="${productoId}"]`);
+  const cant = document.querySelector(`.cantInput[data-id="${productoId}"]`);
+  const p = PRODUCTOS.find(x=>x.id===productoId);
+  const precio = parseFloat(card.value||p.precio);
+  const cantidad = Math.max(1, parseInt(cant.value||"1",10));
+
+  asegurarClienteEnLista(cliente);
+
+  const item = {
+    id: crypto.randomUUID(),
+    cliente,
+    productoId,
+    producto: p.nombre,
+    precio,
+    cantidad,
+    subtotal: precio * cantidad
+  };
+  carrito.push(item);
+  renderTabla();
+}
+
+function renderTabla(){
+  const tbody = $("#tbody");
+  tbody.innerHTML = "";
+  carrito.forEach(it=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${it.cliente}</td>
+      <td>${it.producto}</td>
+      <td>${fmt.format(it.precio)}</td>
+      <td>
+        <button class="qty-btn menos" data-id="${it.id}">−</button>
+        <span style="display:inline-block; width:28px; text-align:center">${it.cantidad}</span>
+        <button class="qty-btn mas" data-id="${it.id}">+</button>
+      </td>
+      <td>${fmt.format(it.subtotal)}</td>
+      <td><button class="btn ghost" data-del="${it.id}">Eliminar</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // listeners cantidad
+  $$(".qty-btn.menos").forEach(b=>b.addEventListener("click", e=>{
+    const id = e.currentTarget.dataset.id;
+    cambiarCantidad(id, -1);
+  }));
+  $$(".qty-btn.mas").forEach(b=>b.addEventListener("click", e=>{
+    const id = e.currentTarget.dataset.id;
+    cambiarCantidad(id, +1);
+  }));
+  // eliminar
+  $$("button[data-del]").forEach(b=>b.addEventListener("click", e=>{
+    const id = e.currentTarget.dataset.del;
+    carrito = carrito.filter(x=>x.id!==id);
+    renderTabla();
+  }));
+
+  // total general y por cliente
+  const total = carrito.reduce((acc,x)=>acc+x.subtotal,0);
+  $("#total").textContent = fmt.format(total);
+  renderTotalesPorCliente();
+}
+
+function cambiarCantidad(id, delta){
+  const it = carrito.find(x=>x.id===id);
+  if(!it) return;
+  it.cantidad = Math.max(1, it.cantidad + delta);
+  it.subtotal = it.cantidad * it.precio;
+  renderTabla();
+}
+
+function renderTotalesPorCliente(){
+  const box = $("#totalesPorCliente");
+  box.innerHTML = "";
+  const mapa = new Map();
+  carrito.forEach(it=>{
+    mapa.set(it.cliente, (mapa.get(it.cliente)||0) + it.subtotal);
+  });
+  [...mapa.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cli, total])=>{
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.textContent = `${cli}: ${fmt.format(total)}`;
+    box.appendChild(tag);
+  });
+}
+
+/* ============================
+   Utilidades
+   ============================ */
+$("#btnVaciar").addEventListener("click", ()=>{
+  if(confirm("¿Vaciar todo el carrito?")){ carrito = []; renderTabla(); }
+});
+$("#btnNuevoCliente").addEventListener("click", ()=>{
+  $("#cliente").value = "";
+  $("#cliente").focus();
+  $("#resumenCliente").textContent = "(sin cliente)";
+});
+
+$("#cliente").addEventListener("change", e=>{
+  const nombre = nombreClienteActual();
+  asegurarClienteEnLista(nombre);
+});
+
+/* init */
+renderCards();
+renderTabla();
+</script>
+</body>
+</html>
